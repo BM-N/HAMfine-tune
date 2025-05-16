@@ -1,0 +1,13 @@
+Epoch 1/2 - Train loss: 1.6367 - Val loss: 0.8857
+Traceback (most recent call last):
+  File "/home/bmn/projects/ml_system/project/test_trainer.py", line 58, in <module>
+    train_loss, val_loss = trainer.fit(epochs=config.epochs)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bmn/projects/ml_system/project/trainer/trainer.py", line 46, in fit
+    self._call_callbacks('on_epoch_end', epoch, train_loss, val_loss)
+  File "/home/bmn/projects/ml_system/project/trainer/trainer.py", line 55, in _call_callbacks
+    method(self, *args)
+  File "/home/bmn/projects/ml_system/project/trainer/callbacks/base.py", line 38, in on_epoch_end
+    val_loss = trainer.val_loss
+               ^^^^^^^^^^^^^^^^
+AttributeError: 'Trainer' object has no attribute 'val_loss'
