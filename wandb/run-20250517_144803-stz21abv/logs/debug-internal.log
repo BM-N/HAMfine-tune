@@ -1,0 +1,15 @@
+{"time":"2025-05-17T14:48:03.101962155-03:00","level":"INFO","msg":"stream: starting","core version":"0.19.11","symlink path":"/home/bmn/projects/ml_system/project/wandb/run-20250517_144803-stz21abv/logs/debug-core.log"}
+{"time":"2025-05-17T14:48:03.510079479-03:00","level":"INFO","msg":"created new stream","id":"stz21abv"}
+{"time":"2025-05-17T14:48:03.510111071-03:00","level":"INFO","msg":"stream: started","id":"stz21abv"}
+{"time":"2025-05-17T14:48:03.510132728-03:00","level":"INFO","msg":"writer: Do: started","stream_id":"stz21abv"}
+{"time":"2025-05-17T14:48:03.510247085-03:00","level":"INFO","msg":"sender: started","stream_id":"stz21abv"}
+{"time":"2025-05-17T14:48:03.510250077-03:00","level":"INFO","msg":"handler: started","stream_id":"stz21abv"}
+{"time":"2025-05-17T14:48:03.786602055-03:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-05-17T14:48:43.021345117-03:00","level":"INFO","msg":"stream: closing","id":"stz21abv"}
+{"time":"2025-05-17T14:48:43.021413217-03:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-05-17T14:48:43.021657936-03:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-05-17T14:48:43.763931078-03:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-05-17T14:48:44.061415976-03:00","level":"INFO","msg":"handler: closed","stream_id":"stz21abv"}
+{"time":"2025-05-17T14:48:44.061440298-03:00","level":"INFO","msg":"writer: Close: closed","stream_id":"stz21abv"}
+{"time":"2025-05-17T14:48:44.061481931-03:00","level":"INFO","msg":"sender: closed","stream_id":"stz21abv"}
+{"time":"2025-05-17T14:48:44.061502094-03:00","level":"INFO","msg":"stream: closed","id":"stz21abv"}

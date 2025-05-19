@@ -1,0 +1,15 @@
+{"time":"2025-05-18T11:08:37.193031035-03:00","level":"INFO","msg":"stream: starting","core version":"0.19.11","symlink path":"/home/bmn/projects/ml_system/project/wandb/offline-run-20250518_110836-2vv608el/logs/debug-core.log"}
+{"time":"2025-05-18T11:08:37.337638425-03:00","level":"WARN","msg":"GraphQL client is nil, skipping feature loading"}
+{"time":"2025-05-18T11:08:37.337757368-03:00","level":"INFO","msg":"created new stream","id":"2vv608el"}
+{"time":"2025-05-18T11:08:37.337792381-03:00","level":"INFO","msg":"stream: started","id":"2vv608el"}
+{"time":"2025-05-18T11:08:37.337832575-03:00","level":"INFO","msg":"writer: Do: started","stream_id":"2vv608el"}
+{"time":"2025-05-18T11:08:37.337862484-03:00","level":"INFO","msg":"handler: started","stream_id":"2vv608el"}
+{"time":"2025-05-18T11:08:37.337887872-03:00","level":"INFO","msg":"sender: started","stream_id":"2vv608el"}
+{"time":"2025-05-18T11:08:37.341230733-03:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-05-18T11:09:21.688992967-03:00","level":"INFO","msg":"stream: closing","id":"2vv608el"}
+{"time":"2025-05-18T11:09:21.689054655-03:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-05-18T11:09:21.689091791-03:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-05-18T11:09:21.689130863-03:00","level":"INFO","msg":"handler: closed","stream_id":"2vv608el"}
+{"time":"2025-05-18T11:09:21.689151214-03:00","level":"INFO","msg":"writer: Close: closed","stream_id":"2vv608el"}
+{"time":"2025-05-18T11:09:21.689171091-03:00","level":"INFO","msg":"sender: closed","stream_id":"2vv608el"}
+{"time":"2025-05-18T11:09:21.689231239-03:00","level":"INFO","msg":"stream: closed","id":"2vv608el"}

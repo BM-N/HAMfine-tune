@@ -1,0 +1,15 @@
+{"time":"2025-05-18T10:47:48.683677437-03:00","level":"INFO","msg":"stream: starting","core version":"0.19.11","symlink path":"/home/bmn/projects/ml_system/project/wandb/offline-run-20250518_104748-wprituj5/logs/debug-core.log"}
+{"time":"2025-05-18T10:47:48.926785834-03:00","level":"WARN","msg":"GraphQL client is nil, skipping feature loading"}
+{"time":"2025-05-18T10:47:48.927085202-03:00","level":"INFO","msg":"created new stream","id":"wprituj5"}
+{"time":"2025-05-18T10:47:48.927118602-03:00","level":"INFO","msg":"stream: started","id":"wprituj5"}
+{"time":"2025-05-18T10:47:48.927147926-03:00","level":"INFO","msg":"writer: Do: started","stream_id":"wprituj5"}
+{"time":"2025-05-18T10:47:48.927190177-03:00","level":"INFO","msg":"handler: started","stream_id":"wprituj5"}
+{"time":"2025-05-18T10:47:48.927214606-03:00","level":"INFO","msg":"sender: started","stream_id":"wprituj5"}
+{"time":"2025-05-18T10:47:48.930349768-03:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-05-18T10:47:49.947194619-03:00","level":"INFO","msg":"stream: closing","id":"wprituj5"}
+{"time":"2025-05-18T10:47:49.947232038-03:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-05-18T10:47:49.947314111-03:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-05-18T10:47:49.947387854-03:00","level":"INFO","msg":"handler: closed","stream_id":"wprituj5"}
+{"time":"2025-05-18T10:47:49.947398622-03:00","level":"INFO","msg":"writer: Close: closed","stream_id":"wprituj5"}
+{"time":"2025-05-18T10:47:49.947410279-03:00","level":"INFO","msg":"sender: closed","stream_id":"wprituj5"}
+{"time":"2025-05-18T10:47:49.947472678-03:00","level":"INFO","msg":"stream: closed","id":"wprituj5"}

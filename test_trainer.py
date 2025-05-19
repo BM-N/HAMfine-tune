@@ -12,8 +12,6 @@ from trainer.callbacks.base import ( LossLoggerCallback,
                                     EarlyStoppingCallback)
 import torchmetrics
 
-torchmetrics.classification.MulticlassAccuracy
-
 # 1. Config
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 img_dir1 = "data/HAM10000_images_part_1"
@@ -22,6 +20,11 @@ csv_file = "data/val_set.csv"  # small sample file is enough for this
 bs = 4  # keep it small for testing
 train_transform = get_transforms()
 
+accuracy = torchmetrics.classification.Accuracy(task="multiclass", num_classes=7)
+metrics = {
+    "accuracy": torchmetrics.classification.Accuracy(task="multiclass", num_classes=7),
+    
+}
 
 wandb.init(
     project="ham10000-resnet",

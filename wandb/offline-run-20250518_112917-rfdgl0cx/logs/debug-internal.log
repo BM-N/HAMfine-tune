@@ -1,0 +1,15 @@
+{"time":"2025-05-18T11:29:17.936355666-03:00","level":"INFO","msg":"stream: starting","core version":"0.19.11","symlink path":"/home/bmn/projects/ml_system/project/wandb/offline-run-20250518_112917-rfdgl0cx/logs/debug-core.log"}
+{"time":"2025-05-18T11:29:18.079758507-03:00","level":"WARN","msg":"GraphQL client is nil, skipping feature loading"}
+{"time":"2025-05-18T11:29:18.079838411-03:00","level":"INFO","msg":"created new stream","id":"rfdgl0cx"}
+{"time":"2025-05-18T11:29:18.079878605-03:00","level":"INFO","msg":"handler: started","stream_id":"rfdgl0cx"}
+{"time":"2025-05-18T11:29:18.079900186-03:00","level":"INFO","msg":"stream: started","id":"rfdgl0cx"}
+{"time":"2025-05-18T11:29:18.079946893-03:00","level":"INFO","msg":"writer: Do: started","stream_id":"rfdgl0cx"}
+{"time":"2025-05-18T11:29:18.079929908-03:00","level":"INFO","msg":"sender: started","stream_id":"rfdgl0cx"}
+{"time":"2025-05-18T11:29:18.083851789-03:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-05-18T11:30:20.297917602-03:00","level":"INFO","msg":"stream: closing","id":"rfdgl0cx"}
+{"time":"2025-05-18T11:30:20.297982259-03:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-05-18T11:30:20.298023631-03:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-05-18T11:30:20.298073582-03:00","level":"INFO","msg":"handler: closed","stream_id":"rfdgl0cx"}
+{"time":"2025-05-18T11:30:20.298079764-03:00","level":"INFO","msg":"writer: Close: closed","stream_id":"rfdgl0cx"}
+{"time":"2025-05-18T11:30:20.298113974-03:00","level":"INFO","msg":"sender: closed","stream_id":"rfdgl0cx"}
+{"time":"2025-05-18T11:30:20.298121729-03:00","level":"INFO","msg":"stream: closed","id":"rfdgl0cx"}
