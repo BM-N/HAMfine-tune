@@ -11,18 +11,18 @@ class Callback:
 class LossLoggerCallback(Callback, ):
     def on_epoch_start(self, trainer, epoch,*args, **kwargs):
         print(f"Epoch {epoch+1} of {trainer.epochs} starting")
-    
+
     def on_epoch_end(self, trainer, epoch, train_loss, val_loss, *args, **kwargs):
         print(f'Epoch {epoch+1}/{trainer.epochs} - '
               f'Train loss: {train_loss:.4f} - '
               f'Val loss: {val_loss:.4f}')
         
 class WandbLogger(Callback):  
-    def on_epoch_end(self, trainer, *args, **kwargs):
-        self.metrics = trainer.metrics
-        results = {}
-        for name, metric in self.metrics.items():
-            results[name]=metric(trainer.y_pred, trainer.y_true)
+    def on_epoch_end(self, trainer, train_metrics, val_metrics, *args, **kwargs):
+        results= {
+            'train': train_metrics,
+            'val': val_metrics
+        }
         wandb.log(results)
 class EarlyStoppingCallback(Callback):
     def __init__(self, patience=5, min_delta=0.001):

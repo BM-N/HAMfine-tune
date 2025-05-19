@@ -1,7 +1,7 @@
 import torch
-from torch import nn, optim
-import torchmetrics.classification
 import wandb
+from torch import nn, optim
+from torchmetrics.classification import Accuracy
 
 from models.model import get_model
 from models.transforms import get_transforms
@@ -10,27 +10,25 @@ from trainer.trainer import Trainer
 from trainer.callbacks.base import ( LossLoggerCallback,
                                     WandbLogger,
                                     EarlyStoppingCallback)
-import torchmetrics
+
 
 # 1. Config
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 img_dir1 = "data/HAM10000_images_part_1"
 img_dir2 = "data/HAM10000_images_part_2"
 csv_file = "data/val_set.csv"  # small sample file is enough for this
-bs = 4  # keep it small for testing
+# bs = 4  # keep it small for testing
 train_transform = get_transforms()
 
-accuracy = torchmetrics.classification.Accuracy(task="multiclass", num_classes=7)
 metrics = {
-    "accuracy": torchmetrics.classification.Accuracy(task="multiclass", num_classes=7),
-    
+    "accuracy": Accuracy(task="multiclass", num_classes=7)
 }
 
 wandb.init(
     project="ham10000-resnet",
     config={
     "learning_rate": 1e-3,
-    "batch_size": 128,
+    "batch_size": 256,
     "epochs": 2,
     "architecture": "resnet50",
     "remove_fc": False,
@@ -40,7 +38,7 @@ wandb.init(
 config = wandb.config
 
 # 2. Setup
-model = get_model(config.architecture, config.remove_fc).to(device)
+model = get_model(config.architecture, config.remove_fc) # .to(device)
 optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
 criterion = nn.CrossEntropyLoss()
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=1)
@@ -57,7 +55,7 @@ trainer = Trainer(
     val_dataloader=train_dl,  # for testing, use train_dl as val_dl
     optimizer=optimizer,
     loss_func=criterion,
-    device=device,
+    # device=device,
     callbacks=callbacks 
 )
 
