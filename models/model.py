@@ -3,19 +3,14 @@ import torch.nn as nn
 from torchvision.models import resnet50
 
 
-def get_model(name: str, remove_fc: bool = False, sub_layer=False):
+def get_model(name: str, sub_layer= None):
     device = ('cuda' if torch.cuda.is_available() else "cpu")
     if name == "resnet50":
-        model = resnet50(weights="IMAGENET1K_V2").to(device)
-    if remove_fc:
-        model.fc = sub_layer # type: ignore
-    return model
-
-
-# sequence = nn.Sequential(
-#     nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=1),
-#     nn.ReLU(),
-# )
-
-# model = get_model(name="resnet50", remove_fc=True, sub_layer=sequence)
-# print(model)
+        model = resnet50(weights="IMAGENET1K_V2")
+    if sub_layer is not None:
+        model.fc = sub_layer
+        for param in model.parameters():
+            param.requires_grad = False
+        for param in model.fc.parameters():
+            param.requires_grad = True 
+    return model.to(device)

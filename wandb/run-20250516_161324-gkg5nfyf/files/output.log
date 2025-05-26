@@ -1,9 +1,0 @@
-Traceback (most recent call last):
-  File "/home/bmn/projects/ml_system/project/test_trainer.py", line 62, in <module>
-    train_loss, val_loss = trainer.fit(epochs=config.epochs)
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/bmn/projects/ml_system/project/trainer/trainer.py", line 46, in fit
-    self._call_callbacks('on_epoch_start', epoch)
-  File "/home/bmn/projects/ml_system/project/trainer/trainer.py", line 59, in _call_callbacks
-    method(self, *args)
-TypeError: Callback.on_epoch_start() takes 1 positional argument but 3 were given

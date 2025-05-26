@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader, Dataset
 # if _PROJECT_ROOT not in sys.path:
 #     sys.path.insert(0, _PROJECT_ROOT)
 
-from models.transforms import get_transforms
+# from models.transforms import get_transforms
 
 class HAM10kDS(Dataset):
     def __init__(self, img_dir1, img_dir2, csv_file, transform=None, target_transform=None):
@@ -39,29 +39,6 @@ class HAM10kDS(Dataset):
             label = self.target_transform(label)
         return image, label
 
-def get_dataloader(img_dir1, img_dir2, csv_file, transform, bs=32, shuffle=False, *args, **kwargs):
+def get_dataloader(img_dir1, img_dir2, csv_file, transform, bs, shuffle=False, *args, **kwargs):
     ds = HAM10kDS(img_dir1, img_dir2, csv_file, transform)
     return DataLoader(ds, batch_size=bs, shuffle=shuffle, **kwargs)
-
-# passar isso para o train.py
-
-# img_dir1 = "HAM10000_images_part_1"
-# img_dir2 = "HAM10000_images_part_2"
-# train_file = "train_set.csv"
-# val_file = "val_set.csv"
-# test_file = "test_set.csv"
-# train_transform = get_transforms()
-# val_transform = get_transforms(train=False)
-
-# train_dls = get_dataloader(img_dir1=img_dir1, img_dir2=img_dir2, csv_file=train_file, transform=train_transform, shuffle=True)
-# val_dls = get_dataloader(img_dir1=img_dir1, img_dir2=img_dir2, csv_file=test_file, transform=val_transform)
-# test_dls = get_dataloader(img_dir1=img_dir1, img_dir2=img_dir2, csv_file=test_file, transform=val_transform)
-
-
-# train_dataset = HAM10kDS(img_dir1=img_dir1, img_dir2=img_dir2, csv_file=train_file, transform=train_transform)
-# val_dataset = HAM10kDS(img_dir1=img_dir1, img_dir2=img_dir2, csv_file=val_file, transform=val_transform)
-# test_dataset = HAM10kDS(img_dir1=img_dir1, img_dir2=img_dir2, csv_file=test_file, transform=val_transform)
-#  
-# train_dls = DataLoader(dataset=train_dataset, batch_size=32, shuffle=True)
-# val_dls = DataLoader(dataset=val_dataset, batch_size=32, shuffle=False)
-# test_dls = DataLoader(dataset=test_dataset,batch_size=32, shuffle=False)
