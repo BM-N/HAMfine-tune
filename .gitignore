@@ -13,3 +13,4 @@ wheels/
 
 data/HAM10000_images_part_*
 
+wandb/
