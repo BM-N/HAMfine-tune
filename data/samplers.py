@@ -1,4 +1,4 @@
-import os
+# import os
 import torch
 from torch.utils.data import WeightedRandomSampler
 from collections import Counter
@@ -32,9 +32,9 @@ def get_weighted_sampler_and_loss_weights(csv_file: str):
     return sampler, class_weights_tensor, class_order
 
 
-train_file = os.path.abspath("data/train_set.csv")
+# train_file = os.path.abspath("data/train_set.csv")
 
-sampler, class_weights, class_order = get_weighted_sampler_and_loss_weights(train_file)
+# sampler, class_weights, class_order = get_weighted_sampler_and_loss_weights(train_file)
 
 # print(class_weights)
 

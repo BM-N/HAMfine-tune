@@ -58,7 +58,7 @@ class Trainer:
         avg_loss = total_loss / len(self.train_dataloader)
         final_auroc = auroc.compute()
         final_other_metrics = other_metrics.compute()
-        final_metrics = { **final_other_metrics, **final_auroc}
+        final_metrics = {**final_other_metrics, **final_auroc}
         auroc.reset()
         other_metrics.reset()
         return avg_loss, final_metrics
@@ -105,6 +105,7 @@ class Trainer:
         for epoch in range(self.epochs):
             self._call_callbacks('on_epoch_start', epoch=epoch)
             train_loss, train_metrics = self._one_epoch()
+            # print("Train metrics:", train_metrics)
             val_loss, val_metrics = self._validation()
             self.val_loss = val_loss
             self._call_callbacks('on_epoch_end',
@@ -121,7 +122,8 @@ class Trainer:
                 if self.scheduler.mode == "min":
                     self.scheduler.step(self.val_loss)
                 else:
-                    self.scheduler.step(val_metrics['weighted_recall'])
+                    # print("val_f1", val_metrics['f1_score'][4])
+                    self.scheduler.step(val_metrics['f1_score'][4])
             else:
                 self.scheduler.step()
         return train_loss, train_metrics, val_loss, val_metrics
