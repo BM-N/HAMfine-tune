@@ -10,10 +10,9 @@ from torchmetrics.classification import Accuracy, Precision, Recall, F1Score, AU
 
 from models.model import get_model
 from models.transforms import get_transforms
-from data.datamodule import get_dataloader
+from data.datamodule import get_dataloader, get_loss_class_weights
 from trainer.trainer import Trainer
 from trainer.callbacks.base import LossLoggerCallback, WandbLogger, EarlyStoppingCallback
-from data.samplers import get_weighted_sampler_and_loss_weights
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--lr", type=float, default=1e-4)
@@ -32,12 +31,11 @@ img_dir2 = os.path.abspath("data/HAM10000_images_part_2/")
 train_file = os.path.abspath("data/train_set.csv")
 val_file = os.path.abspath("data/val_set.csv")
 test_file = os.path.abspath("data/test_set.csv")
-classes = sorted(df["dx"].unique())
+class_names = sorted(df["dx"].unique())
+class_weights, class_labels = get_loss_class_weights(train_file)
 
 train_transform = get_transforms()
 val_transform = get_transforms(train=False)
-
-sampler, weights, labels = get_weighted_sampler_and_loss_weights(train_file)
 
 train_dls = get_dataloader(img_dir1=img_dir1, img_dir2=img_dir2, csv_file=train_file,bs=args.bs, transform=train_transform, shuffle = True) # sampler=sampler)
 val_dls = get_dataloader(img_dir1=img_dir1, img_dir2=img_dir2, csv_file=val_file, bs=args.bs, transform=val_transform)
@@ -46,21 +44,22 @@ test_dls = get_dataloader(img_dir1=img_dir1, img_dir2=img_dir2, csv_file=test_fi
 new_head = nn.Sequential(
     nn.Linear(2048, 512),
     nn.ReLU(),
+    nn.Dropout(0.5),
     nn.Linear(512, 7),
 )
 model = get_model(name=args.model, sub_layer=new_head)
 optimizer = optim.Adam(model.parameters(), lr=args.lr)
-loss_func = nn.CrossEntropyLoss(weight=weights)
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, mode='max', patience=3, threshold=0.001)
-callbacks = [WandbLogger(classes=classes), LossLoggerCallback(), EarlyStoppingCallback(patience=5)]
-average=None
+loss_func = nn.CrossEntropyLoss(weight=class_weights)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, mode='max', patience=3, min_lr=1e-7)
+callbacks = [WandbLogger(classes=class_names), LossLoggerCallback(), EarlyStoppingCallback(patience=5)]
+average='none'
 metrics = {
-    "accuracy": Accuracy(task="multiclass", num_classes=7, average='weighted'),
+    "accuracy": Accuracy(task="multiclass", num_classes=7, average='macro'),
     "precision": Precision(task="multiclass", num_classes=7, average=average),
     "recall": Recall(task="multiclass", num_classes=7, average=average),
     "weighted_recall": Recall(task="multiclass", num_classes=7, average='weighted'),
     "f1_score": F1Score(task="multiclass", num_classes=7, average=average),
-    "auroc": AUROC(task="multiclass", num_classes=7, average='weighted'),
+    "auroc": AUROC(task="multiclass", num_classes=7, average=average),
 }
 wandb.init(
     project="ham10000-resnet",
@@ -71,8 +70,10 @@ wandb.init(
         "architecture": args.model,
         "fc_layer_dims": [2048, 512, 7],
         "optimizer": "Adam",
-        "loss": "CrossEntropyLoss",
+        "loss": "CrossEntropyLoss(weighted)",
         "scheduler": "ReduceLROnPlateau",
+        "batchnorm": "None",
+        "dropout":"0.5",
         "half_precision": args.fp16,
     }
 )
@@ -91,3 +92,6 @@ trainer = Trainer(
 )
 
 train_loss, train_metrics, val_loss, val_metrics = trainer.fit(epochs=args.epochs)
+
+
+# IMPLEMENTAR O PROGRAMMATIC APPROACH

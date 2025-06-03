@@ -28,13 +28,15 @@ class WandbLogger(Callback):
 
         if self.classes:    
             for name, value in train_metrics.items():
-                if name not in ["accuracy", "auroc", "weighted_recall"]:
+                if name not in ["accuracy", "weighted_recall"]:
+                # if value.average == 'none':
                     log_data[f'train/{name}'] = {cls:round(value[i].item(), 4) for i, cls in enumerate(self.classes)}
                 else: 
                     log_data[f'train/{name}'] = value.item()
                    
             for name, value in val_metrics.items():
-                if name not in ["accuracy", "auroc", "weighted_recall"]:
+                if name not in ["accuracy", "weighted_recall"]:
+                # if value.average == 'none':
                     log_data[f'val/{name}'] = {cls:round(value[i].item(), 4) for i, cls in enumerate(self.classes)}
                 else: 
                     log_data[f'val/{name}'] = value.item()
@@ -56,8 +58,8 @@ class WandbLogger(Callback):
         print(f'val/recall: {log_data['val/recall']}','\n')
         print(f'train/precision: {log_data['train/precision']}','\n')
         print(f'val/precision: {log_data['val/precision']}','\n')
-        print(f'train/f1_score: {log_data['train/precision']}','\n')
-        print(f'val/f1_score: {log_data['val/precision']}','\n')
+        print(f'train/f1_score: {log_data['train/f1_score']}','\n')
+        print(f'val/f1_score: {log_data['val/f1_score']}','\n')
         print(f'train/accuracy: {log_data['train/accuracy']}','\n')
         print(f'val/accuracy: {log_data['val/accuracy']}','\n')
         print(f'train/auroc: {log_data['train/auroc']}','\n')

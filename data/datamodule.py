@@ -1,6 +1,7 @@
-import os
 # import sys
-
+import os
+import torch
+from collections import Counter
 import pandas as pd
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
@@ -42,3 +43,44 @@ class HAM10kDS(Dataset):
 def get_dataloader(img_dir1, img_dir2, csv_file, transform, bs, shuffle=False, *args, **kwargs):
     ds = HAM10kDS(img_dir1, img_dir2, csv_file, transform)
     return DataLoader(ds, batch_size=bs, shuffle=shuffle, **kwargs)
+
+def get_loss_class_weights(csv_file_path: str, device: str|None = None):
+    """
+    Calculates inverse frequency class weights for a given CSV file.
+
+    """
+    if device is None:
+        device = ('cuda' if torch.cuda.is_available() else "cpu")
+
+    df = pd.read_csv(csv_file_path)
+    labels = df['label'].tolist() # Ensure 'label' is the correct column name
+
+    class_counts = Counter(labels)
+    print(f"Class counts from {os.path.basename(csv_file_path)}: {class_counts}")
+
+    # Calculate inverse frequency weights: 1.0 / count
+    # This gives higher weight to rarer classes.
+    loss_weights_raw = {cls: 1.0 / count for cls, count in class_counts.items()}
+
+    # Ensure weights are in a consistent order (sorted by class label)
+    class_order = sorted(class_counts.keys())
+    sorted_loss_weights = [loss_weights_raw[cls] for cls in class_order]
+
+    class_weights_tensor = torch.tensor(sorted_loss_weights, dtype=torch.float).to(device)
+
+    return class_weights_tensor, class_order
+
+# Example Usage (assuming this script is run from the project root or data/ dir):
+# You can place this function in your data/datamodule.py or directly in train.py
+
+# if __name__ == "__main__":
+#     # Assuming train_set.csv is in data/ directory relative to where this script runs
+#     train_file = os.path.abspath("data/train_set.csv")
+#
+#     # Get weights for the training set
+#     weights_tensor, class_names = get_loss_class_weights(train_file)
+#
+#     print("\nCalculated Class Weights Tensor:")
+#     print(weights_tensor)
+#     print("\nClass Order (corresponds to tensor index):")
+#     print(class_names)
