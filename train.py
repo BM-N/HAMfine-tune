@@ -1,12 +1,11 @@
 import os
 import argparse
-
+import torch
 import wandb
 import pandas as pd
 # import torch
 from torch import optim, nn
 from torchmetrics.classification import Accuracy, Precision, Recall, F1Score, AUROC
-
 
 from models.model import get_model
 from models.transforms import get_transforms
@@ -49,9 +48,14 @@ new_head = nn.Sequential(
 )
 model = get_model(name=args.model, sub_layer=new_head)
 optimizer = optim.Adam(model.parameters(), lr=args.lr)
-loss_func = nn.CrossEntropyLoss(weight=class_weights)
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, mode='max', patience=3, min_lr=1e-7)
-callbacks = [WandbLogger(classes=class_names), LossLoggerCallback(), EarlyStoppingCallback(patience=5)]
+# loss_func = nn.CrossEntropyLoss(weight=class_weights)
+loss_func = focal_loss = torch.hub.load('adeelh/pytorch-multi-class-focal-loss',
+                            model='FocalLoss',
+                            alpha=class_weights,
+                            gamma=2,
+                            reduction='mean')
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, mode='max', patience=5, min_lr=1e-7)
+callbacks = [WandbLogger(classes=class_names), LossLoggerCallback(), EarlyStoppingCallback(patience=10, mode="max", min_delta=0.01),]
 average='none'
 metrics = {
     "accuracy": Accuracy(task="multiclass", num_classes=7, average='macro'),
@@ -70,7 +74,8 @@ wandb.init(
         "architecture": args.model,
         "fc_layer_dims": [2048, 512, 7],
         "optimizer": "Adam",
-        "loss": "CrossEntropyLoss(weighted)",
+        "early_stopping": "True(f1_mel)",
+        "loss": "FocalLoss(weighted), gamma=2",
         "scheduler": "ReduceLROnPlateau",
         "batchnorm": "None",
         "dropout":"0.5",

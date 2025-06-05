@@ -263,7 +263,7 @@ def plot_history_metrics(history_df: pd.DataFrame, base_metric_prefixes_to_plot:
          print(f"\nAll plots saved in the '{output_dir}' directory.")
 
 if __name__ == "__main__":
-    run_path = "bmnunes-universidade-federal-de-s-o-paulo-unifesp/ham10000-resnet/runs/s8tgp79q" # One more public run example
+    run_path = "bmnunes-universidade-federal-de-s-o-paulo-unifesp/ham10000-resnet/runs/rr7gr0vo" # One more public run example
 
     print(f"Attempting to fetch data for run: {run_path}\n")
     
