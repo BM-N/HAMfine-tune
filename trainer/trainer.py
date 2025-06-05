@@ -122,7 +122,6 @@ class Trainer:
                 if self.scheduler.mode == "min":
                     self.scheduler.step(self.val_loss)
                 else:
-                    # print("val_f1", val_metrics['f1_score'][4])
                     self.scheduler.step(val_metrics['f1_score'][4])
             else:
                 self.scheduler.step()

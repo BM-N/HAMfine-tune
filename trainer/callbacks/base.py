@@ -68,19 +68,35 @@ class WandbLogger(Callback):
         print(f'val/weighted_recall: {log_data['val/weighted_recall']}','\n')
         
 class EarlyStoppingCallback(Callback):
-    def __init__(self, patience=3, min_delta=0.001):
+    def __init__(self, patience=10, mode='min', min_delta=0.001):
         self.patience = patience
         self.min_delta = min_delta
-        self.best_loss = float('inf')
+        self.mode = mode
+        if self.mode == 'min':
+            self.best_loss = float('inf')
+        if self.mode == 'max':
+            self.best_value = float('-inf')
         self.should_stop = False
         self.counter = 0
     
     def on_epoch_end(self, trainer, *args, **kwargs):
-        val_loss = trainer.val_loss
-        if val_loss < self.best_loss - self.min_delta:
-            self.best_loss = val_loss
-            self.counter = 0
-        else:
-            self.counter += 1
-        if self.counter >= self.patience:
-            self.should_stop = True
+        if self.mode == "min":
+            val_loss = trainer.val_loss
+            if val_loss < self.best_loss - self.min_delta:
+                self.best_loss = val_loss
+                self.counter = 0
+            else:
+                self.counter += 1
+            if self.counter >= self.patience:
+                self.should_stop = True
+        if self.mode == "max":  
+            val_f1_mel = kwargs['val_metrics']['f1_score'][4]
+            if val_f1_mel > self.best_value + self.min_delta:
+                self.best_value = val_f1_mel
+                self.counter = 0
+            else: 
+                self.counter += 1
+            if self.counter >= self.patience:
+                self.should_stop=True
+            
+            
