@@ -1,4 +1,5 @@
 import os
+import shutil
 import argparse
 import torch
 import wandb
@@ -11,19 +12,24 @@ from models.model import get_model
 from models.transforms import get_transforms
 from data.datamodule import get_dataloader, get_loss_class_weights
 from trainer.trainer import Trainer
-from trainer.callbacks.base import LossLoggerCallback, WandbLogger, EarlyStoppingCallback
+from trainer.callbacks.base import LossLoggerCallback, WandbLogger, EarlyStoppingCallback, ModelCheckpoint
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--lr", type=float, default=1e-4)
+parser.add_argument("--dropout", type=float, default=0.36057091203514374)
+parser.add_argument("--gama", type=float, default=1.5)
 parser.add_argument("--model", type=str, default="resnet50")
-parser.add_argument("--bs", type=int, default=512)
-parser.add_argument("--epochs", type=int, default=10)
+parser.add_argument("--bs", type=int, default=32)
+parser.add_argument("--epochs", type=int, default=40)
 parser.add_argument("--fp16", action="store_true", help="Use mixed precision training.")
+parser.add_argument('--artifact', type=str, default=None, help="Artifact's name to load the model from.")
 args = parser.parse_args()
 
 print("Training Configuration:")
 print(f"Learning Rate: {args.lr}, Model: {args.model}, Batch Size: {args.bs}, Epochs: {args.epochs}, FP16: {args.fp16}")
 
+WANDB_ENTITY = "bmnunes-universidade-federal-de-s-o-paulo-unifesp"
+WANDB_PROJECT = "ham10000-resnet"
 df = pd.read_csv(os.path.abspath("data/HAM10000_metadata.csv"))
 img_dir1 = os.path.abspath("data/HAM10000_images_part_1/")
 img_dir2 = os.path.abspath("data/HAM10000_images_part_2/")
@@ -43,19 +49,24 @@ test_dls = get_dataloader(img_dir1=img_dir1, img_dir2=img_dir2, csv_file=test_fi
 new_head = nn.Sequential(
     nn.Linear(2048, 512),
     nn.ReLU(),
-    nn.Dropout(0.5),
+    nn.Dropout(args.dropout),
     nn.Linear(512, 7),
 )
 model = get_model(name=args.model, sub_layer=new_head)
 optimizer = optim.Adam(model.parameters(), lr=args.lr)
 # loss_func = nn.CrossEntropyLoss(weight=class_weights)
-loss_func = focal_loss = torch.hub.load('adeelh/pytorch-multi-class-focal-loss',
+loss_func = torch.hub.load('adeelh/pytorch-multi-class-focal-loss',
                             model='FocalLoss',
                             alpha=class_weights,
-                            gamma=2,
+                            gamma=1.5,
                             reduction='mean')
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, mode='max', patience=5, min_lr=1e-7)
-callbacks = [WandbLogger(classes=class_names), LossLoggerCallback(), EarlyStoppingCallback(patience=10, mode="max", min_delta=0.01),]
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, mode='max', patience=4, min_lr=1e-7)
+callbacks = [
+    WandbLogger(classes=class_names),
+    ModelCheckpoint(monitor="f1_score", mode="max"),
+    LossLoggerCallback(),
+    EarlyStoppingCallback(patience=8, mode="max", min_delta=0.001),
+    ]
 average='none'
 metrics = {
     "accuracy": Accuracy(task="multiclass", num_classes=7, average='macro'),
@@ -65,7 +76,7 @@ metrics = {
     "f1_score": F1Score(task="multiclass", num_classes=7, average=average),
     "auroc": AUROC(task="multiclass", num_classes=7, average=average),
 }
-wandb.init(
+run = wandb.init(
     project="ham10000-resnet",
     config={
         "learning_rate": args.lr,
@@ -75,19 +86,28 @@ wandb.init(
         "fc_layer_dims": [2048, 512, 7],
         "optimizer": "Adam",
         "early_stopping": "True(f1_mel)",
-        "loss": "FocalLoss(weighted), gamma=2",
+        "loss": f"FocalLoss(weighted), gamma={args.gama}",
         "scheduler": "ReduceLROnPlateau",
         "batchnorm": "None",
-        "dropout":"0.5",
+        "dropout":f"{args.dropout}",
         "half_precision": args.fp16,
     }
 )
 config = wandb.config
 
+if args.artifact:
+    artifact_to_load = run.use_artifact(f'{WANDB_ENTITY}/{WANDB_PROJECT}/{args.artifact}')
+    artifact_dir = artifact_to_load.download()
+    model_path = os.path.join(artifact_dir, "model.pth")
+    model.load_state_dict(torch.load(model_path))
+    print('Successfuly loaded model from artifact')
+    shutil.rmtree(artifact_dir)
+    print('Successfuly deleted artifact from local storage')
+
 trainer = Trainer(
     model=model,
     train_dataloader=train_dls,
-    val_dataloader=val_dls,  # for testing, use train_dl as val_dl
+    val_dataloader=val_dls,
     optimizer=optimizer,
     loss_func=loss_func,
     scheduler=scheduler,
@@ -97,6 +117,3 @@ trainer = Trainer(
 )
 
 train_loss, train_metrics, val_loss, val_metrics = trainer.fit(epochs=args.epochs)
-
-
-# IMPLEMENTAR O PROGRAMMATIC APPROACH
