@@ -42,7 +42,7 @@ class HAM10kDS(Dataset):
 
 def get_dataloader(img_dir1, img_dir2, csv_file, transform, bs, shuffle=False, *args, **kwargs):
     ds = HAM10kDS(img_dir1, img_dir2, csv_file, transform)
-    return DataLoader(ds, batch_size=bs, shuffle=shuffle, **kwargs)
+    return DataLoader(ds, batch_size=bs, shuffle=shuffle, pin_memory=True, *args, **kwargs)
 
 def get_loss_class_weights(csv_file_path: str, device: str|None = None):
     """

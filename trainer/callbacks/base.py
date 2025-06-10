@@ -1,4 +1,6 @@
 import wandb
+import torch
+import os
 
 class Callback:
     def on_epoch_start(self, trainer, *args, **kwargs): pass
@@ -53,7 +55,7 @@ class WandbLogger(Callback):
         log_data['learning_rate'] = trainer.optimizer.param_groups[0]['lr']
         
         wandb.log(log_data, step=epoch)
-        
+        print(f"Data for Epoch {epoch+1} of {trainer.epochs}")
         print(f'train/recall: {log_data['train/recall']}','\n')
         print(f'val/recall: {log_data['val/recall']}','\n')
         print(f'train/precision: {log_data['train/precision']}','\n')
@@ -66,7 +68,6 @@ class WandbLogger(Callback):
         print(f'val/auroc: {log_data['val/auroc']}','\n')
         print(f'train/weighted_recall: {log_data['train/weighted_recall']}','\n')
         print(f'val/weighted_recall: {log_data['val/weighted_recall']}','\n')
-        
 class EarlyStoppingCallback(Callback):
     def __init__(self, patience=10, mode='min', min_delta=0.001):
         self.patience = patience
@@ -99,4 +100,61 @@ class EarlyStoppingCallback(Callback):
             if self.counter >= self.patience:
                 self.should_stop=True
             
+class ModelCheckpoint(Callback):
+    def __init__(self, monitor="val_loss", mode = "min", save_best_only=True):
+        self.monitor = monitor
+        self.best_score = float('inf')
+        self.save_best_only = save_best_only
+        self.mode = mode
+        if self.mode == 'min':
+            self.best_score = float('inf')
+        if self.mode == 'max':
+            self.best_score = float('-inf')
+
+    def on_epoch_end(self, trainer, epoch, val_loss, val_metrics, *args, **kwargs):
+        should_save = False
+        if not self.save_best_only:
+            should_save = True
+        if self.mode == "min":
+            current_score = val_loss
+            if current_score < self.best_score:
+                self.best_score = current_score
+                should_save = True
+                print(f"\nEpoch {epoch + 1}: {self.monitor} improved. Saving model...")
+        if self.mode == "max":
+            metric_score = val_metrics[self.monitor]
+            print(metric_score)
+            current_score = metric_score[4]
+            print(current_score)
+            if current_score > self.best_score:
+                self.best_score = current_score
+                should_save = True
+                print(f"\nEpoch {epoch + 1}: {self.monitor} improved. Saving model...")
+        if should_save:
+            # Use aliases to track 'latest' and 'best' versions
+            aliases = ["latest", f"epoch_{epoch + 1}"]
+            if self.save_best_only:
+                aliases.append("best")
+            # Artifact logging logic goes here
+            model_artifact = wandb.Artifact(
+                name="my-model", # A good practice to name the artifact after the run
+                type="model",
+                description=f"Model from epoch {epoch+1} with {self.monitor} of {current_score:.4f}",
+                metadata={
+                    "epoch": epoch+1,
+                    self.monitor: self.best_score,
+                    **val_metrics
+                }
+            )
+
+            # Create a temporary file to save the checkpoint
+            checkpoint_path = "model.pth"
+            torch.save(trainer.model.state_dict(), checkpoint_path)
             
+            # Add the file to the artifact and log it
+            model_artifact.add_file(checkpoint_path)
+            
+            wandb.log_artifact(model_artifact, aliases=aliases)
+
+            # Clean up the local file
+            os.remove(checkpoint_path)
