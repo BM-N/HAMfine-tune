@@ -1,14 +1,14 @@
 import torch
-import torch.nn as nn
+# import torch.nn as nn
 from torchvision.models import resnet50
 
 
-def get_model(name: str, sub_layer= None):
+def get_model(name: str, new_head= None):
     device = ('cuda' if torch.cuda.is_available() else "cpu")
     if name == "resnet50":
         model = resnet50(weights="IMAGENET1K_V2")
-    if sub_layer is not None:
-        model.fc = sub_layer
+    if new_head is not None:
+        model.fc = new_head
         for param in model.parameters():
             param.requires_grad = False
         for param in model.fc.parameters():
