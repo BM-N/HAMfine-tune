@@ -1,0 +1,32 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # The Backend API Service
+  api:
+    build:
+      context: .
+      dockerfile: project/api/Dockerfile
+    hostname: api
+    volumes:
+      # This volume makes the image data available to the API
+      - ./project/data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # The Frontend UI Service
+  ui:
+    build:
+      context: .
+      dockerfile: project/ui/Dockerfile
+    ports:
+      - "8501:8501"
+    environment:
+      # This tells the UI how to find the API on the internal Docker network
+      - API_URL=http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy

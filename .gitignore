@@ -5,18 +5,20 @@ build/
 dist/
 wheels/
 *.egg-info
-
+.python-version
 # Virtual environments
 .venv
 
 # Images
 
-data/HAM10000_images_part_*
+project/data/HAM10000_images_part_*/
 
 wandb/
 wandb_plots/
 get_wandb_logs.py
 test*.py
 
-
 *sweep*
+
+uv.lock
+pyproject_*
