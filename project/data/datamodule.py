@@ -58,7 +58,7 @@ def get_loss_class_weights(csv_file_path: str, device: str | None = None):
     labels = df["label"].tolist()
 
     class_counts = Counter(labels)
-    print(f"Class counts from {os.path.basename(csv_file_path)}:{class_counts}")
+    # print(f"Class counts from {os.path.basename(csv_file_path)}:{class_counts}")
 
     loss_weights_raw = {cls: 1.0 / count for cls, count in class_counts.items()}
 

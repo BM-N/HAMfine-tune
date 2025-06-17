@@ -1,14 +1,14 @@
 import io
 import os
-from contextlib import asynccontextmanager
-
+import pandas as pd
 import torch
 import torch.nn as nn
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile
-from fastapi.responses import JSONResponse
 from PIL import Image
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
 
-import wandb
 from data.datamodule import get_loss_class_weights
 from models.model import get_model
 from models.transforms import get_transforms
@@ -43,21 +43,24 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
-_, _, CLASS_NAMES = get_loss_class_weights(
+_, _, class_names = get_loss_class_weights(
     os.path.abspath("data/enc_HAM10000_metadata.csv")
 )
-MODEL_PATH = "model.pth"
+class_names_full = {
+    'akiec': 'Actinic Keratoses', 'bcc': 'Basal Cell Carcinoma',
+    'bkl': 'Benign Keratosis-like Lesions', 'df': 'Dermatofibroma',
+    'mel': 'Melanoma', 'nv': 'Melanocytic Nevi', 'vasc': 'Vascular Lesions'
+}
+model_path = "artifacts/my-model:v2/model.pth"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
-def load_inference_model(model='my-model:v2'):
+def load_inference_model(model_path=model_path, device=device):
     """
     Loads the model architecture, replaces the classifier head to match the
     exact architecture used during training, and then loads the fine-tuned
     weights from the specified artifact path.
     """
-    WANDB_ENTITY = "bmnunes-universidade-federal-de-s-o-paulo-unifesp"
-    WANDB_PROJECT = "ham10000-resnet"
+    
     new_head = nn.Sequential(
         nn.Linear(2048, 512),
         nn.ReLU(),
@@ -65,16 +68,6 @@ def load_inference_model(model='my-model:v2'):
         nn.Linear(512, 7),
     )
     model = get_model(name="resnet50", new_head=new_head)
-    if not os.path.exists(f"artifacts/{model}/model.pth"):
-        wandb.init(entity=WANDB_ENTITY, project=WANDB_PROJECT)
-        artifact_to_load = wandb.use_artifact(
-            f"{WANDB_ENTITY}/{WANDB_PROJECT}/{model}"
-        )
-        artifact_dir = artifact_to_load.download()
-        model_path = os.path.join(artifact_dir, "model.pth")
-    else:
-        model_path = "artifacts/my-model:v2/model.pth"
-
     try:
         model.load_state_dict(torch.load(model_path, map_location=device))
         print("Successfuly loaded model from artifact")
@@ -91,6 +84,8 @@ def load_inference_model(model='my-model:v2'):
 
     return model
 
+# --- Static File Serving for Test Images ---
+app.mount("/static", StaticFiles(directory="data"), name="static")
 
 preprocess = get_transforms(train=False)
 
@@ -144,9 +139,9 @@ async def predict(request: Request, file: UploadFile = File(...)):
     probabilities, predicted_index = get_prediction(model, image_tensor)
 
     certainty_scores = {
-        CLASS_NAMES[i]: prob.item() for i, prob in enumerate(probabilities)
+        class_names[i]: prob.item() for i, prob in enumerate(probabilities)
     }
-    predicted_class_name = CLASS_NAMES[predicted_index]  # type: ignore
+    predicted_class_name = class_names[predicted_index]  # type: ignore
 
     return JSONResponse(
         content={
@@ -155,3 +150,25 @@ async def predict(request: Request, file: UploadFile = File(...)):
             "all_certainties": certainty_scores,
         }
     )
+    
+    
+app.get("/test-images", summary="Get list of test images and labels")
+def get_test_images(TEST_SET_CSV = "data/test_set.csv"):
+    try:
+        df = pd.read_csv(TEST_SET_CSV)
+        def find_image_url(image_id):
+            if os.path.exists(f"data/HAM10000_images_part_1/{image_id}.jpg"):
+                return f"/static/HAM10000_images_part_1/{image_id}.jpg"
+            if os.path.exists(f"data/HAM10000_images_part_2/{image_id}.jpg"):
+                return f"/static/HAM10000_images_part_2/{image_id}.jpg"
+            return None
+
+        df['image_url'] = df['image_id'].apply(find_image_url)
+        df = df.dropna(subset=['image_url'])
+        df['dx_full'] = df['dx'].map(class_names_full)
+        result = df[['image_id', 'image_url', 'dx_full']].to_dict(orient="records")
+        return JSONResponse(content=result)
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="Test set CSV not found.")
+
+# uvicorn project.api.main:app --reload
