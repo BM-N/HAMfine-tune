@@ -1,17 +1,32 @@
 import io
 import os
+from contextlib import asynccontextmanager
+
 import pandas as pd
 import torch
 import torch.nn as nn
-from PIL import Image
-from fastapi import FastAPI, File, UploadFile, HTTPException, Request
+from data.datamodule import get_loss_class_weights
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from contextlib import asynccontextmanager
-
-from data.datamodule import get_loss_class_weights
 from models.model import get_model
 from models.transforms import get_transforms
+from PIL import Image
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+_, _, class_names = get_loss_class_weights(
+    os.path.abspath("data/enc_HAM10000_metadata.csv")
+)
+class_names_full = {
+    "akiec": "Actinic Keratoses",
+    "bcc": "Basal Cell Carcinoma",
+    "bkl": "Benign Keratosis-like Lesions",
+    "df": "Dermatofibroma",
+    "mel": "Melanoma",
+    "nv": "Melanocytic Nevi",
+    "vasc": "Vascular Lesions",
+}
+model_path = "model.pth"
 
 
 @asynccontextmanager
@@ -22,19 +37,35 @@ async def lifespan(app: FastAPI):
     """
     print("Application startup: Loading model...")
     try:
-        app.state.model = load_inference_model()
+        app.state.class_names = class_names
+        print("Class names loaded successfully.")
         print(f"Model loaded successfully and is running on {device}.")
         print(
             "Using validation transforms from models/transforms.py for preprocessing."
         )
+        new_head = nn.Sequential(
+            nn.Linear(2048, 512),
+            nn.ReLU(),
+            nn.Dropout(p=0.36057091203514374),
+            nn.Linear(512, 7),
+        )
+        model = get_model(name="resnet50", new_head=new_head)
+
+        model.load_state_dict(torch.load(model_path, map_location=device))
+        print("Successfuly loaded model from artifact")
+        model.to(device)
+        model.eval()
+        app.state.model = model
     except Exception as e:
         print(f"Application startup failed: Could not load model. {e}")
         app.state.model = None
+        app.state.class_names = None
 
     yield
 
     print("Application shutdown: Clearing model from memory.")
     app.state.model = None
+    app.state.class_names = None
 
 
 app = FastAPI(
@@ -43,48 +74,7 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
-_, _, class_names = get_loss_class_weights(
-    os.path.abspath("data/enc_HAM10000_metadata.csv")
-)
-class_names_full = {
-    'akiec': 'Actinic Keratoses', 'bcc': 'Basal Cell Carcinoma',
-    'bkl': 'Benign Keratosis-like Lesions', 'df': 'Dermatofibroma',
-    'mel': 'Melanoma', 'nv': 'Melanocytic Nevi', 'vasc': 'Vascular Lesions'
-}
-model_path = "artifacts/my-model:v2/model.pth"
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-def load_inference_model(model_path=model_path, device=device):
-    """
-    Loads the model architecture, replaces the classifier head to match the
-    exact architecture used during training, and then loads the fine-tuned
-    weights from the specified artifact path.
-    """
-    
-    new_head = nn.Sequential(
-        nn.Linear(2048, 512),
-        nn.ReLU(),
-        nn.Dropout(p=0.36057091203514374),
-        nn.Linear(512, 7),
-    )
-    model = get_model(name="resnet50", new_head=new_head)
-    try:
-        model.load_state_dict(torch.load(model_path, map_location=device))
-        print("Successfuly loaded model from artifact")
-    except FileNotFoundError:
-        print(
-            f"ERROR: Model file not found at {model_path}. Please place your trained model artifact in the project root."
-        )
-        raise
-    except Exception as e:
-        print(f"ERROR: An error occurred while loading the model state_dict: {e}")
-        raise
-    model = model.to(device)
-    model.eval()
-
-    return model
-
-# --- Static File Serving for Test Images ---
+# static file 'serving'
 app.mount("/static", StaticFiles(directory="data"), name="static")
 
 preprocess = get_transforms(train=False)
@@ -129,46 +119,64 @@ async def predict(request: Request, file: UploadFile = File(...)):
     for model architecture and image preprocessing.
     """
     model = request.app.state.model
-    if model is None:
+    class_names = request.app.state.class_names
+    if not model or not class_names:
         raise HTTPException(
-            status_code=503, detail="Model is not available. Please check server logs."
+            status_code=503,
+            detail="Model or class names not available. Check server logs.",
         )
 
     image_bytes = await file.read()
     image_tensor = transform_image(image_bytes)
     probabilities, predicted_index = get_prediction(model, image_tensor)
 
+    predicted_class_abbrev = class_names[predicted_index]
+    predicted_class_full_name = class_names_full[predicted_class_abbrev]
+
     certainty_scores = {
-        class_names[i]: prob.item() for i, prob in enumerate(probabilities)
+        class_names_full[class_names[i]]: prob.item()
+        for i, prob in enumerate(probabilities)
     }
-    predicted_class_name = class_names[predicted_index]  # type: ignore
 
     return JSONResponse(
         content={
-            "prediction": predicted_class_name,
-            "certainty": certainty_scores[predicted_class_name],
+            "prediction": predicted_class_full_name,
+            "certainty": certainty_scores[predicted_class_full_name],
             "all_certainties": certainty_scores,
         }
     )
-    
-    
-app.get("/test-images", summary="Get list of test images and labels")
-def get_test_images(TEST_SET_CSV = "data/test_set.csv"):
+
+
+@app.get("/test-images", summary="Get list of test images and labels")
+def get_test_images(TEST_SET_CSV="data/test_set.csv"):
     try:
         df = pd.read_csv(TEST_SET_CSV)
+
         def find_image_url(image_id):
-            if os.path.exists(f"data/HAM10000_images_part_1/{image_id}.jpg"):
+            # Check for the image in both possible directories inside the container
+            path1 = f"data/HAM10000_images_part_1/{image_id}.jpg"
+            path2 = f"data/HAM10000_images_part_2/{image_id}.jpg"
+
+            if os.path.exists(path1):
                 return f"/static/HAM10000_images_part_1/{image_id}.jpg"
-            if os.path.exists(f"data/HAM10000_images_part_2/{image_id}.jpg"):
+            elif os.path.exists(path2):
                 return f"/static/HAM10000_images_part_2/{image_id}.jpg"
             return None
 
-        df['image_url'] = df['image_id'].apply(find_image_url)
-        df = df.dropna(subset=['image_url'])
-        df['dx_full'] = df['dx'].map(class_names_full)
-        result = df[['image_id', 'image_url', 'dx_full']].to_dict(orient="records")
+        df["image_url"] = df["image_id"].apply(find_image_url)
+        df = df.dropna(subset=["image_url"])
+
+        # Correctly map the integer 'label' to the full string name
+        df["dx"] = df["label"].apply(lambda label_int: class_names[label_int])
+        df["dx_full"] = df["dx"].map(class_names_full)
+
+        result = df[["image_id", "image_url", "dx_full"]].to_dict(orient="records")
         return JSONResponse(content=result)
     except FileNotFoundError:
-        raise HTTPException(status_code=500, detail="Test set CSV not found.")
-
-# uvicorn project.api.main:app --reload
+        raise HTTPException(
+            status_code=500, detail=f"Test set CSV not found at {TEST_SET_CSV}"
+        )
+    except (KeyError, IndexError) as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error mapping labels in test set: {e}"
+        )
