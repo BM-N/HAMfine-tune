@@ -1,4 +1,3 @@
-# import os
 from collections import Counter
 
 import pandas as pd
@@ -21,7 +20,7 @@ def get_weighted_sampler_and_loss_weights(csv_file: str):
         weights=sample_weights, num_samples=len(sample_weights), replacement=True
     )
 
-    # For the loss function (balanced)
+    # loss function weights
     loss_weights = {
         cls: num_samples / (len(class_counts) * count)
         for cls, count in class_counts.items()

@@ -1,4 +1,4 @@
-# This file shows how data encoding was done.
+# data encoding process
 import pandas as pd
 
 df = pd.read_csv("../data/HAM10000_metadata.csv")

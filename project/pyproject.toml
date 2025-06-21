@@ -3,7 +3,7 @@ name = "project"
 version = "0.1.0"
 description = "A system to train and serve a skin lesion classification model."
 readme = "README.md"
-requires-python = ">=3.10" # Docker images
+requires-python = ">=3.12"
 dependencies = [
     # Core ML dependencies
     "torch>=2.7.0",
@@ -14,36 +14,30 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Dependencies for the FastAPI backend
 api = [
     "fastapi>=0.115.12",
     "uvicorn[standard]>=0.34.3",
     "python-multipart>=0.0.20",
+    "gunicorn>=22.0.0"
 ]
 
-# Dependencies for the Streamlit frontend
 ui = [
     "streamlit>=1.45.1",
     "requests>=2.32.3",
 ]
 
-# Dependencies for development and analysis
 dev = [
     "jupyter>=1.0.0",
     "matplotlib>=3.7.0",
     "wandb"
 ]
 
-# --- Build System Configuration ---
-
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-# --- Setuptools Configuration ---
-
 [tool.setuptools]
-packages = ["api", "models", "trainer", "utils", "app", "data"]
+packages = ["api", "models", "trainer", "utils", "data"]
 
 [dependency-groups]
 dev = [

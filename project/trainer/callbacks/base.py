@@ -175,7 +175,7 @@ class ModelCheckpoint(Callback):
             aliases = ["latest", f"epoch_{epoch + 1}"]
             if self.save_best_only:
                 aliases.append("best")
-            # Artifact logging logic
+            # artifact logging
             model_artifact = wandb.Artifact(
                 name="my-model",
                 type="model",
@@ -187,14 +187,14 @@ class ModelCheckpoint(Callback):
                 },
             )
 
-            # Create a temporary file to save the checkpoint
+            # create a temporary file to save the checkpoint
             checkpoint_path = "model.pth"
             torch.save(trainer.model.state_dict(), checkpoint_path)
 
-            # Add the file to the artifact and log it
+            # add the file to the artifact and log it
             model_artifact.add_file(checkpoint_path)
 
             wandb.log_artifact(model_artifact, aliases=aliases)
 
-            # Clean up the local file
+            # clean up the local file
             os.remove(checkpoint_path)
