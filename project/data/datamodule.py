@@ -6,7 +6,6 @@ import torch
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 
-
 class HAM10kDS(Dataset):
     def __init__(
         self, img_dir1, img_dir2, csv_file, transform=None, target_transform=None
@@ -54,7 +53,7 @@ def get_loss_class_weights(csv_file_path: str, device: str | None = None):
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
     df = pd.read_csv(csv_file_path)
-    class_names = sorted(df["dx"].unique())
+    class_names = sorted(pd.read_csv('data/HAM10000_metadata.csv')["dx"].unique())
     labels = df["label"].tolist()
 
     class_counts = Counter(labels)
