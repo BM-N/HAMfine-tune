@@ -13,7 +13,7 @@ from models.model import get_model
 from models.transforms import get_transforms
 from PIL import Image
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 _, _, class_names = get_loss_class_weights(
     os.path.abspath("data/enc_HAM10000_metadata.csv")
 )
@@ -26,6 +26,8 @@ class_names_full = {
     "nv": "Melanocytic Nevi",
     "vasc": "Vascular Lesions",
 }
+
+resnet_path = "models/weights/resnet50_imagenet_v2.pth"
 model_path = "model.pth"
 
 
@@ -49,9 +51,10 @@ async def lifespan(app: FastAPI):
             nn.Dropout(p=0.36057091203514374),
             nn.Linear(512, 7),
         )
-        model = get_model(name="resnet50", new_head=new_head)
 
-        model.load_state_dict(torch.load(model_path, map_location=device))
+        model = get_model(name="resnet50", new_head=new_head, weight_path=resnet_path)
+
+        model.load_state_dict(torch.load(model_path, map_location=device, weights_only=False))
         print("Successfuly loaded model from artifact")
         model.to(device)
         model.eval()
@@ -153,7 +156,6 @@ def get_test_images(TEST_SET_CSV="data/test_set.csv"):
         df = pd.read_csv(TEST_SET_CSV)
 
         def find_image_url(image_id):
-            # Check for the image in both possible directories inside the container
             path1 = f"data/HAM10000_images_part_1/{image_id}.jpg"
             path2 = f"data/HAM10000_images_part_2/{image_id}.jpg"
 
@@ -166,7 +168,6 @@ def get_test_images(TEST_SET_CSV="data/test_set.csv"):
         df["image_url"] = df["image_id"].apply(find_image_url)
         df = df.dropna(subset=["image_url"])
 
-        # Correctly map the integer 'label' to the full string name
         df["dx"] = df["label"].apply(lambda label_int: class_names[label_int])
         df["dx_full"] = df["dx"].map(class_names_full)
 
